@@ -1,24 +1,26 @@
-# Menggunakan base image FrankenPHP resmi yang sangat cocok untuk Vercel
+# 1. Menggunakan base image FrankenPHP resmi
 FROM dunglas/frankenphp:latest-alpine
 
-# Install ekstensi PHP yang dibutuhkan Laravel (misal: pdo_mysql untuk database)
+# 2. Ambil Composer resmi dari image composer dan masukkan ke server kita (BARIS BARU)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 3. Install ekstensi PHP yang dibutuhkan Laravel
 RUN install-php-extensions pdo_mysql bcmath opcache zip intl
 
-# Atur direktori kerja di dalam kontainer
+# 4. Atur direktori kerja
 WORKDIR /app
 
-# Salin seluruh file proyek Laravel ke dalam kontainer
+# 5. Salin seluruh file proyek
 COPY . .
 
-# Install dependensi Composer untuk kebutuhan production
+# 6. Jalankan composer install (sekarang komandonya pasti ketemu)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Berikan hak akses folder storage dan cache ke user server
+# 7. Berikan hak akses folder storage dan cache
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Vercel akan mengarahkan traffic ke port secara dinamis melalui env $PORT
 ENV PORT=80
 EXPOSE 80
 
-# Jalankan FrankenPHP dan arahkan root dokumen ke folder public Laravel
+# 8. Jalankan FrankenPHP
 CMD ["frankenphp", "php-server", "--listen", ":80", "--public-dir", "public"]
